@@ -5,19 +5,13 @@ import com.workintech.s18d1.entity.BreadType;
 import com.workintech.s18d1.entity.Burger;
 import com.workintech.s18d1.exceptions.BurgerException;
 import com.workintech.s18d1.util.BurgerValidation;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -26,148 +20,119 @@ public class BurgerController {
 
     private final BurgerDao burgerDao;
 
+    @Autowired
     public BurgerController(BurgerDao burgerDao) {
         this.burgerDao = burgerDao;
     }
 
     @GetMapping
     public List<Burger> findAll() {
-        try {
-            return burgerDao.findAll();
-        } catch (RuntimeException exception) {
-            log.error("Error while fetching all burgers", exception);
-            throw exception;
-        }
+        log.info("Request received to find all burgers");
+        return burgerDao.findAll();
     }
 
     @GetMapping("/{id}")
-    public Burger findById(@PathVariable Long id) {
-        try {
-            BurgerValidation.validateId(id);
-            return burgerDao.findById(id);
-        } catch (RuntimeException exception) {
-            log.error("Error while fetching burger with id {}", id, exception);
-            throw exception;
+    public Burger findById(@PathVariable("id") Long id) {
+        log.info("Request received to find burger by id: {}", id);
+        if (id == null || id < 0) {
+            throw new BurgerException("Id must be positive", HttpStatus.BAD_REQUEST);
         }
+        return burgerDao.findById(id);
     }
 
     @PostMapping
     public Burger save(@RequestBody Burger burger) {
-        try {
-            BurgerValidation.validateBurger(burger);
-            return burgerDao.save(burger);
-        } catch (RuntimeException exception) {
-            log.error("Error while saving burger", exception);
-            throw exception;
-        }
+        log.info("Request received to save burger: {}", burger);
+        BurgerValidation.validateBurger(burger);
+        return burgerDao.save(burger);
     }
 
-    @PutMapping({"", "/{id}"})
-    public Burger update(@PathVariable(required = false) Long id, @RequestBody Burger burger) {
-        try {
-            if (burger == null) {
-                throw new BurgerException("Burger data cannot be null", HttpStatus.BAD_REQUEST);
-            }
-            if (id != null) {
-                burger.setId(id);
-            }
-            BurgerValidation.validateId(burger.getId());
-            return burgerDao.update(burger);
-        } catch (RuntimeException exception) {
-            log.error("Error while updating burger with id {}", id != null ? id : burger != null ? burger.getId() : null, exception);
-            throw exception;
-        }
+    @PutMapping
+    public Burger update(@RequestBody Burger burger) {
+        log.info("Request received to update burger: {}", burger);
+        BurgerValidation.validateBurger(burger);
+        return burgerDao.update(burger);
+    }
+
+    @PutMapping("/{id}")
+    public Burger updateWithId(@PathVariable("id") Long id, @RequestBody Burger burger) {
+        log.info("Request received to update burger with id: {} and body: {}", id, burger);
+        burger.setId(id);
+        BurgerValidation.validateBurger(burger);
+        return burgerDao.update(burger);
     }
 
     @DeleteMapping("/{id}")
-    public Burger remove(@PathVariable Long id) {
-        try {
-            BurgerValidation.validateId(id);
-            return burgerDao.remove(id);
-        } catch (RuntimeException exception) {
-            log.error("Error while removing burger with id {}", id, exception);
-            throw exception;
+    public Burger delete(@PathVariable("id") Long id) {
+        log.info("Request received to delete burger by id: {}", id);
+        if (id == null || id < 0) {
+            throw new BurgerException("Id must be positive", HttpStatus.BAD_REQUEST);
         }
+        return burgerDao.remove(id);
     }
 
     @GetMapping("/price/{price}")
-    public List<Burger> findByPrice(@PathVariable int price) {
-        try {
-            validatePrice(price);
-            return burgerDao.findByPrice(price);
-        } catch (RuntimeException exception) {
-            log.error("Error while filtering burgers by price {}", price, exception);
-            throw exception;
-        }
-    }
-
-    @GetMapping("/findByPrice")
-    public List<Burger> findByPriceFromBody(@RequestBody Map<String, Integer> payload) {
-        try {
-            Integer price = payload.get("price");
-            if (price == null) {
-                throw new BurgerException("Price is required", HttpStatus.BAD_REQUEST);
-            }
-            validatePrice(price);
-            return burgerDao.findByPrice(price);
-        } catch (RuntimeException exception) {
-            log.error("Error while filtering burgers by request body price", exception);
-            throw exception;
-        }
+    public List<Burger> findByPrice(@PathVariable("price") Integer price) {
+        log.info("Request received to find burgers with price greater than: {}", price);
+        return burgerDao.findByPrice(price);
     }
 
     @GetMapping("/breadType/{breadType}")
-    public List<Burger> findByBreadType(@PathVariable BreadType breadType) {
+    public List<Burger> findByBreadType(@PathVariable("breadType") String breadType) {
+        log.info("Request received to find burgers with breadType: {}", breadType);
         try {
-            return burgerDao.findByBreadType(breadType);
-        } catch (RuntimeException exception) {
-            log.error("Error while filtering burgers by bread type {}", breadType, exception);
-            throw exception;
-        }
-    }
-
-    @GetMapping("/findByBreadType")
-    public List<Burger> findByBreadTypeFromBody(@RequestBody Map<String, String> payload) {
-        try {
-            String breadType = payload.get("breadType");
-            if (breadType == null || breadType.isBlank()) {
-                throw new BurgerException("Bread type is required", HttpStatus.BAD_REQUEST);
-            }
-            return burgerDao.findByBreadType(BreadType.valueOf(breadType.toUpperCase()));
-        } catch (IllegalArgumentException exception) {
-            throw new BurgerException("Invalid bread type", HttpStatus.BAD_REQUEST);
-        } catch (RuntimeException exception) {
-            log.error("Error while filtering burgers by request body bread type", exception);
-            throw exception;
+            BreadType type = BreadType.valueOf(breadType.toUpperCase());
+            return burgerDao.findByBreadType(type);
+        } catch (IllegalArgumentException e) {
+            throw new BurgerException("Invalid bread type: " + breadType, HttpStatus.BAD_REQUEST);
         }
     }
 
     @GetMapping("/content/{content}")
-    public List<Burger> findByContent(@PathVariable String content) {
-        try {
-            BurgerValidation.validateContent(content);
-            return burgerDao.findByContent(content);
-        } catch (RuntimeException exception) {
-            log.error("Error while filtering burgers by content {}", content, exception);
-            throw exception;
+    public List<Burger> findByContent(@PathVariable("content") String content) {
+        log.info("Request received to find burgers containing content: {}", content);
+        return burgerDao.findByContent(content);
+    }
+
+    @GetMapping("/findByPrice")
+    public List<Burger> findByPriceBody(@RequestBody PriceDto priceDto) {
+        log.info("Request received to find burgers with price greater than (body): {}", priceDto);
+        if (priceDto == null || priceDto.getPrice() == null) {
+            throw new BurgerException("Price is required in request body", HttpStatus.BAD_REQUEST);
         }
+        return burgerDao.findByPrice(priceDto.getPrice());
+    }
+
+    @GetMapping("/findByBreadType")
+    public List<Burger> findByBreadTypeBody(@RequestBody BreadTypeDto breadTypeDto) {
+        log.info("Request received to find burgers with breadType (body): {}", breadTypeDto);
+        if (breadTypeDto == null || breadTypeDto.getBreadType() == null) {
+            throw new BurgerException("BreadType is required in request body", HttpStatus.BAD_REQUEST);
+        }
+        return burgerDao.findByBreadType(breadTypeDto.getBreadType());
     }
 
     @GetMapping("/findByContent")
-    public List<Burger> findByContentFromBody(@RequestBody Map<String, String> payload) {
-        try {
-            String content = payload.get("content");
-            BurgerValidation.validateContent(content);
-            return burgerDao.findByContent(content);
-        } catch (RuntimeException exception) {
-            log.error("Error while filtering burgers by request body content", exception);
-            throw exception;
+    public List<Burger> findByContentBody(@RequestBody ContentDto contentDto) {
+        log.info("Request received to find burgers containing content (body): {}", contentDto);
+        if (contentDto == null || contentDto.getContent() == null) {
+            throw new BurgerException("Content is required in request body", HttpStatus.BAD_REQUEST);
         }
+        return burgerDao.findByContent(contentDto.getContent());
     }
 
-    private void validatePrice(Integer price) {
-        if (price == null || price <= 0) {
-            throw new BurgerException("Price must be greater than zero", HttpStatus.BAD_REQUEST);
-        }
+    @Data
+    public static class PriceDto {
+        private Integer price;
+    }
+
+    @Data
+    public static class BreadTypeDto {
+        private BreadType breadType;
+    }
+
+    @Data
+    public static class ContentDto {
+        private String content;
     }
 }
