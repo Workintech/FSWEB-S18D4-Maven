@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-S18d1Application<s18d1>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.workintech.s18d1.S18d1Application",
+            "projectName": "s18d1",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
