@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Burger API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        button { margin: 8px 8px 8px 0; padding: 8px 16px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 16px; border-radius: 8px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Burger REST API Test</h1>
+    <p>API: <code>http://localhost:9000/burger</code></p>
+
+    <button onclick="getAll()">GET All Burgers</button>
+    <button onclick="createBurger()">POST New Burger</button>
+
+    <pre id="output">Sonuç burada görünecek...</pre>
+
+    <script>
+        const API = 'http://localhost:9000/burger';
+
+        async function getAll() {
+            try {
+                const res = await fetch(API);
+                const data = await res.json();
+                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                document.getElementById('output').textContent = 'Hata: ' + err.message;
+            }
+        }
+
+        async function createBurger() {
+            try {
+                const res = await fetch(API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Vegan Delight',
+                        price: 8.99,
+                        isVegan: true,
+                        breadType: 'WRAP',
+                        contents: 'Lettuce, Tomato, Vegan Patty, Avocado'
+                    })
+                });
+                const data = await res.json();
+                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                document.getElementById('output').textContent = 'Hata: ' + err.message;
+            }
+        }
+    </script>
+</body>
+</html>
