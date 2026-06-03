@@ -6,7 +6,7 @@ import com.workintech.s18d1.dao.BurgerDao;
 import com.workintech.s18d1.entity.BreadType;
 import com.workintech.s18d1.entity.Burger;
 import com.workintech.s18d1.exceptions.BurgerException;
-import com.workintech.s18d1.exceptions.GlobalExceptionHandler;
+import com.workintech.s18d1.util.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
